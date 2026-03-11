@@ -1,10 +1,13 @@
 ﻿"use client";
 
+import Button from "@/components/ui/Button";
+import CheckList from "@/features/todo-list/CheckList";
+import Search from "@/features/todo-list/Search";
 import { createItem } from "@/lib/api/createItem";
 import { getItems } from "@/lib/api/getItems";
 import { updateItem } from "@/lib/api/updateItem";
 import { Item } from "@/types/item";
-import Link from "next/link";
+import Image from "next/image";
 import { FormEvent, useEffect, useState } from "react";
 
 export default function TodoListClient() {
@@ -61,57 +64,75 @@ export default function TodoListClient() {
     return (
         <>
             <section>
-                <form onSubmit={handleCreateItem}>
-                    <input
-                        type="text"
+                <form onSubmit={handleCreateItem} className="flex items-center gap-2">
+                    <Search
                         placeholder="할 일을 입력해주세요"
                         value={newItemName}
                         onChange={(event) => setNewItemName(event.target.value)}
                     />
-                    <button type="submit">추가</button>
+                    <Button
+                        type="submit"
+                        variant={
+                            incompleteItems.length === 0 ? "add-empty" : "add-has-items"
+                        }
+                        iconOnlyOnMobile
+                        className="shrink-0"
+                    >
+                        추가하기
+                    </Button>
                 </form>
             </section>
 
             <section>
-                <h2>TO DO</h2>
-                <ul>
+                <h2>
+                    <Image
+                        src="/assets/todo/todo.svg"
+                        alt="TO DO"
+                        width={101}
+                        height={36}
+                    />
+                </h2>
+                <ul className="mt-3 space-y-2">
                     {incompleteItems.length === 0 && (
                         <li>할 일이 없어요. TODO를 새롭게 추가해주세요!</li>
                     )}
                     {incompleteItems.map((item) => (
-                        <li key={item.id}>
-                            <input
-                                type="checkbox"
-                                checked={item.isCompleted}
-                                onChange={(e) =>
-                                    handleToggleItem(item.id, e.target.checked)
-                                }
-                            />
-                            <Link href={`/items/${item.id}`}>{item.name}</Link>
-                        </li>
+                        <CheckList
+                            key={item.id}
+                            item={item}
+                            isDone={false}
+                            onToggle={(checked) =>
+                                handleToggleItem(item.id, checked)
+                            }
+                        />
                     ))}
                 </ul>
             </section>
 
             <section>
-                <h2>DONE</h2>
-                <ul>
+                <h2>
+                    <Image
+                        src="/assets/done/done.svg"
+                        alt="DONE"
+                        width={97}
+                        height={36}
+                    />
+                </h2>
+                <ul className="mt-3 space-y-2">
                     {completedItems.length === 0 && (
                         <li>
                             아직 다 한 일이 없어요. 해야 할 일을 체크해보세요!
                         </li>
                     )}
                     {completedItems.map((item) => (
-                        <li key={item.id}>
-                            <input
-                                type="checkbox"
-                                checked={item.isCompleted}
-                                onChange={(e) =>
-                                    handleToggleItem(item.id, e.target.checked)
-                                }
-                            />
-                            <Link href={`/items/${item.id}`}>{item.name}</Link>
-                        </li>
+                        <CheckList
+                            key={item.id}
+                            item={item}
+                            isDone
+                            onToggle={(checked) =>
+                                handleToggleItem(item.id, checked)
+                            }
+                        />
                     ))}
                 </ul>
             </section>
