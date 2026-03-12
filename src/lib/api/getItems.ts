@@ -26,7 +26,9 @@ export async function getItems({
         pageSize: String(pageSize),
     });
 
-    const response = await fetch(`${baseUrl}/${tenantId}/items?${query.toString()}`);
+    const response = await fetch(`${baseUrl}/${tenantId}/items?${query.toString()}`, {
+        cache: "no-store",
+    });
     if (!response.ok) throw new Error("Failed to load items");
 
     const rows = (await response.json()) as ItemListRow[];

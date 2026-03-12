@@ -4,14 +4,17 @@ import Button from "@/components/ui/Button";
 import CheckList from "@/features/todo-list/CheckList";
 import Search from "@/features/todo-list/Search";
 import { createItem } from "@/lib/api/createItem";
-import { getItems } from "@/lib/api/getItems";
 import { updateItem } from "@/lib/api/updateItem";
 import { Item } from "@/types/item";
 import Image from "next/image";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 
 interface EmptyStateProps {
     type: "todo" | "done";
+}
+
+interface TodoListClientProps {
+    initialItems: Item[];
 }
 
 // 항목이 비어 있을 때 TO DO / DONE 안내 일러스트와 문구 표시
@@ -54,34 +57,35 @@ function EmptyState({ type }: EmptyStateProps) {
     );
 }
 
-export default function TodoListClient() {
+export default function TodoListClient({ initialItems }: TodoListClientProps) {
     const tenantId = process.env.NEXT_PUBLIC_TENANT_ID!;
+    const createLockRef = useRef(false);
 
-    const [items, setItems] = useState<Item[]>([]);
+    const [items, setItems] = useState(initialItems);
     const [newItemName, setNewItemName] = useState("");
-
-    // 첫 진입 시 목록 조회 후 화면 상태 초기화
-    useEffect(() => {
-        getItems({ tenantId })
-            .then(setItems)
-            .catch(() => {
-                console.error("Failed to load items");
-            });
-    }, [tenantId]);
+    const [isCreating, setIsCreating] = useState(false);
 
     // 입력값으로 새 할 일 생성 후 목록 상단 반영
     const handleCreateItem = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+        if (createLockRef.current) return;
 
         const name = newItemName.trim();
         if (!name) return;
+
+        createLockRef.current = true;
+        setIsCreating(true);
 
         try {
             const createdItem = await createItem({ tenantId, name });
             setItems((prev) => [createdItem, ...prev]);
             setNewItemName("");
-        } catch {
-            console.error("Failed to create item");
+        } catch (error) {
+            console.error("Failed to create item", error);
+            alert("할 일 추가에 실패했어요. 잠시 후 다시 시도해주세요.");
+        } finally {
+            createLockRef.current = false;
+            setIsCreating(false);
         }
     };
 
@@ -96,8 +100,9 @@ export default function TodoListClient() {
             setItems((prev) =>
                 prev.map((item) => (item.id === itemId ? updatedItem : item)),
             );
-        } catch {
-            console.error("Failed to update item");
+        } catch (error) {
+            console.error("Failed to update item", error);
+            alert("할 일 상태 변경에 실패했어요. 잠시 후 다시 시도해주세요.");
         }
     };
 
@@ -115,6 +120,7 @@ export default function TodoListClient() {
                     <Search
                         value={newItemName}
                         onChange={(event) => setNewItemName(event.target.value)}
+                        disabled={isCreating}
                     />
                     <Button
                         type="submit"
@@ -125,6 +131,7 @@ export default function TodoListClient() {
                         }
                         iconOnlyOnMobile
                         className="shrink-0"
+                        disabled={isCreating}
                     >
                         추가하기
                     </Button>
@@ -189,3 +196,4 @@ export default function TodoListClient() {
         </div>
     );
 }
+

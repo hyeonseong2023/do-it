@@ -13,7 +13,9 @@ export async function getItem({
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
     if (!baseUrl) throw new Error("Missing API base URL");
 
-    const response = await fetch(`${baseUrl}/${tenantId}/items/${itemId}`);
+    const response = await fetch(`${baseUrl}/${tenantId}/items/${itemId}`, {
+        cache: "no-store",
+    });
     if (!response.ok) throw new Error("Failed to load item");
 
     const row = await response.json();

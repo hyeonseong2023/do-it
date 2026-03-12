@@ -3,107 +3,124 @@
 import Button from "@/components/ui/Button";
 import CheckListDetail from "@/features/todo-detail/CheckListDetail";
 import { deleteItem } from "@/lib/api/deleteItem";
-import { getItem } from "@/lib/api/getItem";
 import { uploadImage } from "@/lib/api/uploadImage";
 import { updateItem } from "@/lib/api/updateItem";
 import { Item } from "@/types/item";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 
 interface TodoDetailClientProps {
     itemId: number;
+    initialItem: Item;
 }
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const ENGLISH_FILE_NAME_PATTERN = /^[A-Za-z0-9._-]+$/;
 
-export default function TodoDetailClient({ itemId }: TodoDetailClientProps) {
+// 메모 높이에 맞춰 위쪽 패딩을 계산해 세로 중앙 정렬처럼 보정
+function updateMemoPadding(textarea: HTMLTextAreaElement | null) {
+    if (!textarea) return;
+
+    const previousHeight = textarea.style.height;
+    const previousPaddingTop = textarea.style.paddingTop;
+
+    textarea.style.paddingTop = "0px";
+    textarea.style.height = "0px";
+    const contentHeight = textarea.scrollHeight;
+    textarea.style.height = previousHeight;
+    textarea.style.paddingTop = previousPaddingTop;
+
+    const nextPaddingTop = Math.max(
+        Math.floor((textarea.clientHeight - contentHeight) / 2),
+        0,
+    );
+
+    textarea.style.paddingTop = `${nextPaddingTop}px`;
+}
+
+export default function TodoDetailClient({
+    itemId,
+    initialItem,
+}: TodoDetailClientProps) {
     const router = useRouter();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const memoTextareaRef = useRef<HTMLTextAreaElement>(null);
+    const saveLockRef = useRef(false);
+    const deleteLockRef = useRef(false);
     const tenantId = process.env.NEXT_PUBLIC_TENANT_ID!;
     const [imageFile, setImageFile] = useState<File | null>(null);
-    const [savedItem, setSavedItem] = useState<Item | null>(null);
-    const [item, setItem] = useState<Item>({
-        id: itemId,
-        tenantId,
-        name: "",
-        memo: null,
-        imageUrl: null,
-        isCompleted: false,
-    });
+    const [savedItem, setSavedItem] = useState(initialItem);
+    const [item, setItem] = useState(initialItem);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
-    // 상세 페이지 진입 시 항목 데이터 조회
     useEffect(() => {
-        getItem({ tenantId, itemId })
-            .then((loadedItem) => {
-                setItem(loadedItem);
-                setSavedItem(loadedItem);
-            })
-            .catch(() => {
-                console.error("Failed to load item");
-            });
-    }, [tenantId, itemId]);
-
-    // 메모 내용이 짧을 때는 입력 영역 안에서 세로 중앙 정렬
-    useEffect(() => {
-        const adjustMemoPadding = () => {
-            const textarea = memoTextareaRef.current;
-            if (!textarea) return;
-
-            const previousHeight = textarea.style.height;
-            const previousPaddingTop = textarea.style.paddingTop;
-
-            textarea.style.paddingTop = "0px";
-            textarea.style.height = "0px";
-            const contentHeight = textarea.scrollHeight;
-            textarea.style.height = previousHeight;
-            textarea.style.paddingTop = previousPaddingTop;
-
-            const nextPaddingTop = Math.max(
-                Math.floor((textarea.clientHeight - contentHeight) / 2),
-                0,
-            );
-
-            textarea.style.paddingTop = `${nextPaddingTop}px`;
+        const handleResize = () => {
+            updateMemoPadding(memoTextareaRef.current);
         };
 
-        adjustMemoPadding();
-        window.addEventListener("resize", adjustMemoPadding);
+        handleResize();
+        window.addEventListener("resize", handleResize);
 
         return () => {
-            window.removeEventListener("resize", adjustMemoPadding);
+            window.removeEventListener("resize", handleResize);
         };
     }, [item.memo]);
 
     // 새 이미지를 선택했다면 먼저 업로드한 뒤 수정 API에 반영
     const handleSave = async () => {
-        let imageUrl = item.imageUrl ?? undefined;
+        if (!hasChanges || saveLockRef.current || deleteLockRef.current) return;
 
-        if (imageFile) {
-            imageUrl = await uploadImage({ tenantId, image: imageFile });
+        saveLockRef.current = true;
+        setIsSaving(true);
+
+        try {
+            let imageUrl = item.imageUrl ?? undefined;
+
+            if (imageFile) {
+                imageUrl = await uploadImage({ tenantId, image: imageFile });
+            }
+
+            const updatedItem = await updateItem({
+                tenantId,
+                itemId,
+                name: item.name,
+                memo: item.memo ?? "",
+                imageUrl,
+                isCompleted: item.isCompleted,
+            });
+
+            setItem(updatedItem);
+            setSavedItem(updatedItem);
+            setImageFile(null);
+            router.push("/");
+        } catch (error) {
+            console.error("Failed to update item", error);
+            alert("할 일 수정에 실패했어요. 잠시 후 다시 시도해주세요.");
+        } finally {
+            saveLockRef.current = false;
+            setIsSaving(false);
         }
-
-        const updatedItem = await updateItem({
-            tenantId,
-            itemId,
-            name: item.name,
-            memo: item.memo ?? "",
-            imageUrl,
-            isCompleted: item.isCompleted,
-        });
-
-        setItem(updatedItem);
-        setSavedItem(updatedItem);
-        setImageFile(null);
-        router.push("/");
     };
 
     // 삭제 후 목록 페이지로 이동
     const handleDelete = async () => {
-        await deleteItem({ tenantId, itemId });
-        router.push("/");
+        if (saveLockRef.current || deleteLockRef.current) return;
+
+        deleteLockRef.current = true;
+        setIsDeleting(true);
+
+        try {
+            await deleteItem({ tenantId, itemId });
+            router.push("/");
+        } catch (error) {
+            console.error("Failed to delete item", error);
+            alert("할 일 삭제에 실패했어요. 잠시 후 다시 시도해주세요.");
+        } finally {
+            deleteLockRef.current = false;
+            setIsDeleting(false);
+        }
     };
 
     const handlePickImage = () => {
@@ -111,7 +128,7 @@ export default function TodoDetailClient({ itemId }: TodoDetailClientProps) {
     };
 
     // 이미지 파일 검증 후 미리보기 상태에 반영
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -141,12 +158,12 @@ export default function TodoDetailClient({ itemId }: TodoDetailClientProps) {
 
     // 저장된 원본과 비교해 수정 완료 버튼 상태 결정
     const hasChanges =
-        savedItem !== null &&
-        (item.name !== savedItem.name ||
-            (item.memo ?? "") !== (savedItem.memo ?? "") ||
-            item.imageUrl !== savedItem.imageUrl ||
-            item.isCompleted !== savedItem.isCompleted ||
-            imageFile !== null);
+        item.name !== savedItem.name ||
+        (item.memo ?? "") !== (savedItem.memo ?? "") ||
+        item.imageUrl !== savedItem.imageUrl ||
+        item.isCompleted !== savedItem.isCompleted ||
+        imageFile !== null;
+    const isActionPending = isSaving || isDeleting;
 
     return (
         <div className="mx-auto flex min-h-[calc(100vh-60px)] w-full max-w-[1200px] flex-col gap-4 bg-white px-4 py-4 min-[744px]:gap-6 min-[744px]:px-6 min-[744px]:py-6 min-[1200px]:px-[102px]">
@@ -193,7 +210,9 @@ export default function TodoDetailClient({ itemId }: TodoDetailClientProps) {
                             <Button
                                 type="button"
                                 onClick={handlePickImage}
-                                variant={item.imageUrl ? "image-edit" : "image-empty"}
+                                variant={
+                                    item.imageUrl ? "image-edit" : "image-empty"
+                                }
                                 shape="icon"
                             >
                                 이미지 편집
@@ -205,7 +224,9 @@ export default function TodoDetailClient({ itemId }: TodoDetailClientProps) {
                 <section>
                     <div
                         className="relative h-[311px] w-full overflow-hidden rounded-3xl bg-cover bg-center min-[1200px]:w-[589px]"
-                        style={{ backgroundImage: "url('/assets/memo/memo.svg')" }}
+                        style={{
+                            backgroundImage: "url('/assets/memo/memo.svg')",
+                        }}
                     >
                         <p className="absolute left-1/2 top-[18px] -translate-x-1/2 [font-family:var(--font-family-base)] text-base font-extrabold leading-none tracking-normal text-amber-800">
                             Memo
@@ -214,7 +235,10 @@ export default function TodoDetailClient({ itemId }: TodoDetailClientProps) {
                             ref={memoTextareaRef}
                             value={item.memo ?? ""}
                             onChange={(e) =>
-                                setItem((prev) => ({ ...prev, memo: e.target.value }))
+                                setItem((prev) => ({
+                                    ...prev,
+                                    memo: e.target.value,
+                                }))
                             }
                             className="absolute left-4 top-14 h-[229px] w-[calc(100%-32px)] resize-none overflow-y-auto bg-transparent [font-family:var(--font-family-base)] text-center text-base font-normal leading-none tracking-normal text-slate-800 outline-none [scrollbar-width:thin] [scrollbar-color:var(--color-amber-200)_transparent] [&::-webkit-scrollbar]:w-[4px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-amber-200 [&::-webkit-scrollbar-button]:hidden"
                         />
@@ -235,10 +259,19 @@ export default function TodoDetailClient({ itemId }: TodoDetailClientProps) {
                     type="button"
                     onClick={handleSave}
                     variant={hasChanges ? "edit-changed" : "edit-unchanged"}
+                    className={
+                        !hasChanges && !isActionPending ? "cursor-default" : ""
+                    }
+                    disabled={isActionPending}
                 >
                     수정 완료
                 </Button>
-                <Button type="button" onClick={handleDelete} variant="delete">
+                <Button
+                    type="button"
+                    onClick={handleDelete}
+                    variant="delete"
+                    disabled={isActionPending}
+                >
                     삭제하기
                 </Button>
             </div>
