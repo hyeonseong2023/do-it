@@ -2,13 +2,13 @@
 import { ButtonHTMLAttributes } from "react";
 
 type ButtonVariant =
-    | "add-empty"
-    | "add-has-items"
-    | "delete"
-    | "edit-unchanged"
-    | "edit-changed"
-    | "image-empty"
-    | "image-edit";
+    | "add-empty" // 할 일이 비어 있을 때 추가 버튼
+    | "add-has-items" // 할 일이 있을 때 추가 버튼
+    | "delete" // 상세 페이지 삭제 버튼
+    | "edit-unchanged" // 수정 내용이 없을 때 수정 완료 버튼
+    | "edit-changed" // 수정 내용이 있을 때 수정 완료 버튼
+    | "image-empty" // 이미지가 없을 때 업로드 버튼
+    | "image-edit"; // 이미지가 있을 때 편집 버튼
 type ButtonShape = "pill" | "icon";
 
 interface ButtonStyle {
@@ -26,57 +26,57 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const BASE_CLASS =
-    "inline-flex items-center justify-center rounded-[24px] border-2 border-[var(--color-slate-900)] [font-family:var(--font-family-base)] font-bold text-[16px] leading-[100%] tracking-[0] text-center shadow-[3px_6px_0_0_#0B1734] transition active:translate-x-[1px] active:translate-y-[1px] active:shadow-[2px_4px_0_0_#0B1734] disabled:cursor-not-allowed disabled:opacity-50";
+    "inline-flex cursor-pointer items-center justify-center rounded-3xl border-2 border-slate-900 [font-family:var(--font-family-base)] font-bold text-base leading-none tracking-normal text-center shadow-[3px_6px_0_0_#0B1734] transition disabled:cursor-not-allowed disabled:opacity-50";
 
 const PILL_CLASS = "h-[52px] gap-1 px-0";
-const PILL_WIDTH_CLASS = "w-[164.3478240966797px] min-w-[164.3478240966797px]";
-const ICON_CLASS = "h-[52px] w-[54.78260803222656px] p-0";
+const PILL_WIDTH_CLASS = "w-[164px] min-w-[164px]";
+const ICON_CLASS = "h-[52px] w-[54px] p-0";
 const IMAGE_ICON_CLASS = "h-16 w-16 p-0 rounded-full";
 const MOBILE_ICON_ONLY_CLASS =
-    "w-[54.78260803222656px] min-w-[54.78260803222656px] gap-0 px-0 sm:w-[164.3478240966797px] sm:min-w-[164.3478240966797px] sm:gap-1 sm:px-0";
+    "w-[54px] min-w-[54px] gap-0 px-0 sm:w-[164px] sm:min-w-[164px] sm:gap-1 sm:px-0";
 
 const BUTTON_STYLES: Record<ButtonVariant, ButtonStyle> = {
     "add-empty": {
-        buttonClass: "bg-[var(--color-violet-600)] text-white",
+        buttonClass: "bg-violet-600 text-white",
         iconSrc: "/icons/plus/plus.svg",
     },
     "add-has-items": {
         buttonClass:
-            "bg-[var(--color-slate-200)] text-[var(--color-slate-900)]",
+            "bg-slate-200 text-slate-900",
         iconSrc: "/icons/plus/plus.svg",
         iconClass: "brightness-0 saturate-100",
     },
     delete: {
-        buttonClass: "bg-[var(--color-rose-500)] text-white",
+        buttonClass: "bg-rose-500 text-white",
         iconSrc: "/icons/x/x.svg",
     },
     "edit-unchanged": {
         buttonClass:
-            "bg-[var(--color-slate-200)] text-[var(--color-slate-900)]",
+            "bg-slate-200 text-slate-900",
         iconSrc: "/icons/check/check.svg",
         iconClass: "brightness-0 saturate-100",
     },
     "edit-changed": {
-        buttonClass: "bg-[var(--color-lime-300)] text-[var(--color-slate-900)]",
+        buttonClass: "bg-lime-300 text-slate-900",
         iconSrc: "/icons/check/check.svg",
         iconClass: "brightness-0 saturate-100",
     },
     "image-empty": {
-        buttonClass:
-            "bg-[var(--color-slate-200)] border-[var(--color-slate-200)] shadow-none",
+        buttonClass: "bg-slate-200 !border-0 shadow-none",
         iconSrc: "/icons/plus-image/plus-image.svg",
         iconSize: 24,
         iconButtonClass: IMAGE_ICON_CLASS,
     },
     "image-edit": {
         buttonClass:
-            "bg-[var(--color-slate-900-50)] border-[var(--color-slate-900)] shadow-none",
+            "bg-[var(--color-slate-900-50)] border-slate-900 shadow-none",
         iconSrc: "/icons/edit/edit.svg",
         iconSize: 24,
         iconButtonClass: IMAGE_ICON_CLASS,
     },
 };
 
+// 모바일에서 아이콘 전용 축소를 적용할 추가 버튼 variant 판별
 function isAddButtonVariant(variant: ButtonVariant) {
     return variant === "add-empty" || variant === "add-has-items";
 }

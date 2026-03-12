@@ -3,11 +3,11 @@ import Link from "next/link";
 
 export default function Gnb() {
     return (
-        <header className="h-[60px] w-full border-b border-[var(--color-slate-200)] bg-white">
+        <header className="h-[60px] w-full border-b border-slate-200 bg-white">
             <div className="mx-auto flex h-full w-full max-w-[1200px] items-center px-4 min-[744px]:px-6 min-[1200px]:px-0">
                 <Link
                     href="/"
-                    className="inline-flex h-[40px] items-center"
+                    className="inline-flex h-10 items-center"
                 >
                     <Image
                         src="/assets/size-small/size-small.svg"

@@ -10,9 +10,8 @@ export default async function ItemDetailPage({ params }: ItemDetailPageProps) {
     const { itemId } = await params;
 
     return (
-        <main>
-            <section>
-                {/* 상세 편집 기능은 클라이언트 컴포넌트에서 처리 */}
+        <main className="min-h-[calc(100vh-60px)] bg-slate-100">
+            <section className="mx-auto max-w-[1200px]">
                 <TodoDetailClient itemId={itemId} />
             </section>
         </main>
