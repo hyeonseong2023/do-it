@@ -6,7 +6,7 @@
 
 ### 배포 링크
 
-- https://do-it-omega-eight.vercel.app/
+- https://do-it-codeit.vercel.app/
 
 ### 프로젝트 개요
 
