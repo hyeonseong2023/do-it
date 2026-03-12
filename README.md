@@ -1,36 +1,160 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+﻿# do it
 
-## Getting Started
+> Todo List
 
-First, run the development server:
+## 1. 프로젝트 소개
+
+### 배포 링크
+
+-
+
+### 프로젝트 개요
+
+- 할 일 목록을 관리하는 To Do 서비스
+
+### 주요 기능
+
+#### 공통
+
+- Figma 기반 컬러 시스템 설정
+- 재사용성을 위한 공용 컴포넌트
+- 반응형 웹 디자인
+    - 모바일 레이아웃
+    - 태블릿 레이아웃
+    - 데스크탑 레이아웃
+
+#### 할 일 목록 페이지 (`/`)
+
+**목록 조회**
+
+- '로고' 버튼을 클릭하면 '/' 페이지로 이동합니다. (새로고침)
+- 진행 중인 할 일과 완료된 할 일을 나누어 볼 수 있습니다.
+
+**할 일 추가**
+
+- 상단 입력창에 할 일 텍스트를 입력하고 `추가하기` 버튼을 클릭하거나 엔터를 치면 할 일을 새로 생성합니다.
+
+**할 일 완료**
+
+- 진행 중 할 일 항목의 왼쪽 버튼을 클릭하면 체크 표시가 되면서 완료 상태가 됩니다.
+- 완료된 할 일 항목의 왼쪽 버튼을 다시 클릭하면 체크 표시가 사라지면서 진행 중 상태가 됩니다.
+
+#### 할 일 상세 페이지 (`/items/{itemId}`)
+
+**할 일 수정**
+
+- 할 일 항목을 클릭한 후 항목 수정이 가능합니다.
+- 항목 이름을 수정할 수 있습니다.
+- 할 일 상태(진행/완료)를 수정할 수 있습니다.
+- 메모를 추가할 수 있습니다.
+- 이미지(최대 1개)를 첨부할 수 있습니다.
+    - 이미지 파일 이름은 영어로만 이루어져야 합니다.
+    - 파일 크기는 5MB 이하여야 합니다.
+- `수정 완료` 버튼을 클릭하면 수정 사항이 반영되고, 할 일 목록 페이지로 이동합니다.
+
+**할 일 삭제**
+
+- `삭제하기` 버튼을 클릭하면 할 일 삭제가 가능하며, 삭제 후 할 일 목록 페이지로 이동합니다.
+
+## 2. 기술 스택
+
+### Frontend
+
+- Next.js
+- TypeScript
+- Tailwind CSS
+
+## 3. 폴더 구조
+
+```bash
+src
+├─ app
+│  ├─ globals.css
+│  ├─ layout.tsx
+│  ├─ page.tsx
+│  └─ items/[itemId]/page.tsx
+├─ components
+│  ├─ layout/Gnb.tsx
+│  └─ ui/Button.tsx
+├─ features
+│  ├─ todo-list
+│  │  ├─ TodoListClient.tsx
+│  │  ├─ CheckList.tsx
+│  │  └─ Search.tsx
+│  └─ todo-detail
+│     ├─ TodoDetailClient.tsx
+│     └─ CheckListDetail.tsx
+├─ lib
+│  └─ api
+│     ├─ getItems.ts
+│     ├─ getItem.ts
+│     ├─ createItem.ts
+│     ├─ updateItem.ts
+│     ├─ deleteItem.ts
+│     └─ uploadImage.ts
+├─ styles
+│  ├─ tokens.css
+│  └─ typography.css
+└─ types
+   └─ item.ts
+```
+
+## 4. 실행 방법
+
+### 1) 환경 변수 설정
+
+```bash
+NEXT_PUBLIC_TENANT_ID=528abcd
+```
+
+### 2) 패키지 설치
+
+```bash
+npm install
+```
+
+### 3) 개발 서버 실행
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 4) 빌드
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build
+npm run start
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 5. 고민한 부분
 
-## Learn More
+### 1) 초기 데이터 로딩 방식
 
-To learn more about Next.js, take a look at the following resources:
+- 처음에는 메인 페이지와 상세 페이지에서 클라이언트 컴포넌트가 마운트된 뒤 `useEffect`로 데이터를 조회했습니다.
+- 구현은 단순했지만, 메인, 상세 페이지 진입 시 체크박스와 제목이 늦게 보이고 전체 화면도 한 템포 느리게 느껴졌습니다.
+- 이를 개선하기 위해 메인 페이지(`/`)와 상세 페이지(`/items/[itemId]`)의 초기 데이터는 서버 컴포넌트에서 먼저 패칭하고, 클라이언트 컴포넌트는 그 값을 받아 바로 렌더하도록 변경했습니다.
+- 성능 비교는 Chrome DevTools에서 `Disable cache`를 켠 뒤 메인 페이지 `/`를 10회 새로고침하며 확인했습니다.
+- 개선 전에는 `document` 응답 이후 목록 조회 API가 별도로 실행되었기 때문에, 실제 데이터 표시 시점을 `items` API의 `responseEnd` 기준으로 보았습니다.
+- 개선 후에는 초기 데이터가 문서 응답에 포함되므로 `document` 요청의 `responseEnd`를 기준으로 확인했습니다.
+- 측정 결과, 개선 전에는 목록 데이터가 약 `0.84초` 시점에 표시되었고 개선 후에는 약 `0.61초` 시점에 바로 보이도록 개선되었습니다.
+- 수치 상으로는 `0.23초` 개선하였으나 실제로는 바로 체감될 정도의 차이를 느꼈습니다.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 2) 메모 입력 영역의 세로 정렬
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- 상세 페이지의 메모 입력창은 내용이 짧을 때도 시안처럼 가운데에 가깝게 보이도록 맞춰야 했습니다.
+- `textarea`는 일반적인 CSS만으로 내용의 세로 중앙 정렬을 자연스럽게 구현하기 어려웠습니다.
+- 그래서 메모 영역 전체 높이에서 실제 내용 높이를 뺀 뒤 남는 공간의 절반만큼 위쪽 패딩을 주는 방식으로 보정했습니다.
+- 또한 반응형으로 인해 화면 너비가 바뀌면 줄바꿈 위치도 달라지기 때문에 `resize` 시점에도 다시 계산하도록 처리했습니다.
 
-## Deploy on Vercel
+### 3) 사용자 액션 처리 방식
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- 할 일 추가, 수정, 삭제 버튼의 빠른 연타 시 요청이 연속해서 발생하는 것을 확인했고, 중복 클릭으로 같은 요청이 여러 번 전송되지 않도록 막아야 했습니다.
+- 그래서 버튼 비활성화와 lock ref를 함께 사용해 빠르게 연속 클릭해도 같은 요청이 중복으로 실행되지 않도록 처리했습니다.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 6. 회고
+
+- 프로젝트 초기 설정과 Tailwind CSS는 사용 방법과 개념을 이해하고 있다고 생각했는데, 실제 화면에 적용하는 과정에서는 AI의 도움을 많이 받았습니다. 이번 작업을 통해 문법을 아는 것과 프로젝트 안에서 자연스럽게 활용하는 것은 다른 문제라는 점을 느꼈습니다.
+- 강의로 개별 기술을 배우긴 했으나 디자인 시스템과 API 문서를 함께 참고하면서 화면을 처음부터 구현해나가는 경험은 이번이 처음이었습니다. 익숙하지 않아 어려운 부분도 많았지만, 요구사항을 읽고 직접 구현으로 연결해가는 과정은 재미있었고 실무에 가까운 흐름을 경험했다는 점에서 의미가 있었습니다.
+- Figma를 보며 작업할 때는 각 컴포넌트의 규격이 정리되어 있어 구현 자체는 비교적 수월했습니다. 반면 컴포넌트 간 간격이나 배치 기준은 제가 잘 못찾은 것인가 싶으나 스스로 판단해야 하는 부분이 많아 어렵게 느껴졌습니다.
+- Figma에서 gnb, check-list, search 등이 별도의 컴포넌트 영역으로 정리되어 있는 것을 보고, 시안에서 구분한 단위대로 컴포넌트를 나누는 것이 맞다고 이해했습니다. 그런데 실제로 구현을 진행하다 보니 Search처럼 사용처가 한 곳뿐인 요소는 꼭 공용 컴포넌트로 분리하지 않아도 되겠다는 생각이 들었습니다. 그럼에도 시안 안에서 명확하게 컴포넌트로 정의되어 있다는 점을 우선 기준으로 삼아 분리를 유지했는데 이 점에서 고민이 되었습니다.
+- 과제 테스트를 준비하는 방법도 함께 찾아보았고, 그 과정에서 프로그래머스에서 프론트엔드 과제 테스트를 진행한다는 점을 알게 되었습니다. 현재 진행 중인 과제를 마무리한 뒤에는 실제 과제 테스트 환경에 더 익숙해지기 위해 프로그래머스의 프론트엔드 과제 테스트도 추가로 연습해볼 계획입니다.
